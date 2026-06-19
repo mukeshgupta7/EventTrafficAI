@@ -1,0 +1,14 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.git
+.gitignore
+Astram*
+*.md
+preprocess.py
+train_model.py
+.DS_Store

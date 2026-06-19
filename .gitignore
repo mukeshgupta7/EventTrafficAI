@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.csv
+Astram*
+.DS_Store
+*.bat
+test_*.py
