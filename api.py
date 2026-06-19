@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import joblib
 import numpy as np
@@ -30,10 +31,14 @@ class EventInput(BaseModel):
     requires_road_closure: bool
 
 @app.get("/")
+def serve_frontend():
+    return FileResponse('index.html')
+
+@app.get("/api")
 def root():
     return {"message": "Event-Driven Congestion Management API", "version": "1.0"}
 
-@app.post("/predict")
+@app.post("/api/predict")
 def predict_impact(event: EventInput):
     is_planned = 1 if event.event_type == 'planned' else 0
     
@@ -73,10 +78,10 @@ def predict_impact(event: EventInput):
         "recommendations": resources
     }
 
-@app.get("/causes")
+@app.get("/api/causes")
 def get_causes():
     return {"causes": list(cause_encoder.classes_)}
 
-@app.get("/corridors")
+@app.get("/api/corridors")
 def get_corridors():
     return {"corridors": list(corridor_encoder.classes_)}
