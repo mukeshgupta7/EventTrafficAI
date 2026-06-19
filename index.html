@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event-Driven Congestion Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 20px; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card p { margin: 8px 0; line-height: 1.6; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; color: #333; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        button { background: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 600; }
+        button:hover { background: #5568d3; }
+        .results { display: none; }
+        .impact-badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: 600; margin: 10px 0; }
+        .impact-low { background: #d4edda; color: #155724; }
+        .impact-medium { background: #fff3cd; color: #856404; }
+        .impact-high { background: #f8d7da; color: #721c24; }
+        .resource-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+        .resource-item { background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; }
+        .resource-item h4 { color: #667eea; margin-bottom: 8px; }
+        .resource-item p { font-size: 24px; font-weight: bold; color: #333; }
+        .diversion-list { background: #e7f3ff; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .diversion-list li { margin: 8px 0; color: #004085; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚦 Event-Driven Congestion Management</h1>
+            <p>Forecast traffic impact and get resource recommendations</p>
+            <p style="margin-top: 10px; font-size: 14px; opacity: 0.9;">
+                ⚡ Using ML + 8,173 historical events + real-time factors for intelligent predictions
+            </p>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-left: 4px solid #667eea;">
+            <h3 style="margin-bottom: 10px;">📊 How It Works</h3>
+            <p><strong>Historical Learning:</strong> Analyzes 8,173 past events to identify patterns by location, cause, and time</p>
+            <p><strong>Real-Time Factors:</strong> Adjusts predictions based on peak hours (+40%), weekends (-20%), and current conditions</p>
+            <p><strong>Smart Recommendations:</strong> Combines ML predictions with historical patterns and real-time multipliers for optimal resource deployment</p>
+        </div>
+
+        <div class="card">
+            <h2>Event Details</h2>
+            <form id="eventForm">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Event Type</label>
+                        <select id="eventType" required>
+                            <option value="unplanned">Unplanned</option>
+                            <option value="planned">Planned</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Event Cause</label>
+                        <select id="eventCause" required>
+                            <option value="vehicle_breakdown">vehicle_breakdown</option>
+                            <option value="accident">accident</option>
+                            <option value="construction">construction</option>
+                            <option value="public_event">public_event</option>
+                            <option value="water_logging">water_logging</option>
+                            <option value="pot_holes">pot_holes</option>
+                            <option value="tree_fall">tree_fall</option>
+                            <option value="others">others</option>
+                            <option value="congestion">congestion</option>
+                            <option value="procession">procession</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Corridor</label>
+                    <select id="corridor" required>
+                        <option value="Hosur Road">Hosur Road</option>
+                        <option value="Tumkur Road">Tumkur Road</option>
+                        <option value="Bellary Road 1">Bellary Road 1</option>
+                        <option value="Bellary Road 2">Bellary Road 2</option>
+                        <option value="Old Madras Road">Old Madras Road</option>
+                        <option value="Bannerghata Road">Bannerghata Road</option>
+                        <option value="Magadi Road">Magadi Road</option>
+                        <option value="ORR East 1">ORR East 1</option>
+                        <option value="ORR East 2">ORR East 2</option>
+                        <option value="ORR West 1">ORR West 1</option>
+                        <option value="ORR North 1">ORR North 1</option>
+                        <option value="ORR North 2">ORR North 2</option>
+                        <option value="CBD 2">CBD 2</option>
+                        <option value="Non-corridor">Non-corridor</option>
+                    </select>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Hour (0-23)</label>
+                        <input type="number" id="hour" min="0" max="23" value="9" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Day of Week (0=Mon, 6=Sun)</label>
+                        <input type="number" id="dayOfWeek" min="0" max="6" value="0" required>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Month (1-12)</label>
+                        <input type="number" id="month" min="1" max="12" value="6" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Road Closure Required</label>
+                        <select id="roadClosure" required>
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit">Predict Impact & Get Recommendations</button>
+                <button type="button" onclick="loadExample()" style="background: #28a745; margin-left: 10px;">Load Example Scenario</button>
+            </form>
+        </div>
+
+        <div class="card results" id="results">
+            <h2>Prediction Results</h2>
+            <div>
+                <h3>Traffic Impact</h3>
+                <div id="impactDisplay"></div>
+            </div>
+
+            <h3 style="margin-top: 25px;">🚦 Traffic Impact Assessment</h3>
+            <div class="resource-grid">
+                <div class="resource-item">
+                    <h4>Expected Delay</h4>
+                    <p id="expectedDelay">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Affected Radius</h4>
+                    <p id="affectedRadius">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Congestion Level</h4>
+                    <p id="congestionLevel" style="font-size: 18px;">-</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 25px;">👮 Manpower Deployment Plan</h3>
+            <div id="manpowerPlan" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px;"></div>
+
+            <h3 style="margin-top: 25px;">🚧 Barricading Strategy</h3>
+            <div id="barricadePlan" style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 10px;"></div>
+
+            <h3 style="margin-top: 25px;">🔀 Alternate Routes</h3>
+            <div id="alternateRoutes" style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin-top: 10px;"></div>
+
+            <h3 style="margin-top: 25px;">Resource Recommendations</h3>
+            <div class="resource-grid">
+                <div class="resource-item">
+                    <h4>Traffic Police</h4>
+                    <p id="trafficPolice">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Supervisors</h4>
+                    <p id="supervisors">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Support Staff</h4>
+                    <p id="supportStaff">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Total Personnel</h4>
+                    <p id="totalPersonnel">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Barricades</h4>
+                    <p id="barricades">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Setup Time</h4>
+                    <p id="setupTime">-</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 25px;">📊 Historical Data Analysis</h3>
+            <div class="resource-grid">
+                <div class="resource-item">
+                    <h4>Similar Past Events</h4>
+                    <p id="pastEvents">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Historical Avg Impact</h4>
+                    <p id="avgImpact">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Peak Hour Frequency</h4>
+                    <p id="peakFreq">-</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 25px;">⚡ Real-Time Factors</h3>
+            <div class="resource-grid">
+                <div class="resource-item">
+                    <h4>Impact Multiplier</h4>
+                    <p id="multiplier">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Adjusted Impact Score</h4>
+                    <p id="adjustedImpact">-</p>
+                </div>
+                <div class="resource-item">
+                    <h4>Time Context</h4>
+                    <p id="timeContext" style="font-size: 16px;">-</p>
+                </div>
+            </div>
+
+            <div class="diversion-list">
+                <h3>Diversion Plan</h3>
+                <ul id="diversionList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Replace with your Render API URL after deployment
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000' 
+            : 'https://your-app-name.onrender.com';
+
+        async function loadDropdowns() {
+            try {
+                const [causes, corridors] = await Promise.all([
+                    fetch(`${API_URL}/causes`).then(r => r.json()),
+                    fetch(`${API_URL}/corridors`).then(r => r.json())
+                ]);
+                
+                const causeSelect = document.getElementById('eventCause');
+                causeSelect.innerHTML = '';
+                causes.causes.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = c;
+                    causeSelect.appendChild(opt);
+                });
+
+                const corridorSelect = document.getElementById('corridor');
+                corridorSelect.innerHTML = '';
+                corridors.corridors.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = c;
+                    corridorSelect.appendChild(opt);
+                });
+            } catch (error) {
+                console.log('API not running, using default values');
+            }
+        }
+
+        document.getElementById('eventForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const hour = parseInt(document.getElementById('hour').value);
+            const dayOfWeek = parseInt(document.getElementById('dayOfWeek').value);
+            const isWeekend = dayOfWeek >= 5 ? 1 : 0;
+            const isPeakHour = [8, 9, 17, 18, 19].includes(hour) ? 1 : 0;
+
+            const data = {
+                event_type: document.getElementById('eventType').value,
+                event_cause: document.getElementById('eventCause').value,
+                corridor: document.getElementById('corridor').value,
+                hour: hour,
+                day_of_week: dayOfWeek,
+                month: parseInt(document.getElementById('month').value),
+                is_weekend: isWeekend,
+                is_peak_hour: isPeakHour,
+                requires_road_closure: document.getElementById('roadClosure').value === 'true'
+            };
+
+            const response = await fetch(`${API_URL}/predict`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            displayResults(result);
+        });
+
+        function displayResults(result) {
+            const impactClass = result.impact_level === 'Low' ? 'impact-low' : 
+                              result.impact_level === 'Medium' ? 'impact-medium' : 'impact-high';
+            
+            document.getElementById('impactDisplay').innerHTML = `
+                <span class="impact-badge ${impactClass}">
+                    ${result.impact_level} Impact (Score: ${result.predicted_impact_score})
+                </span>
+            `;
+
+            const rec = result.recommendations;
+            
+            // Traffic Impact Assessment
+            const impact = rec.traffic_impact_assessment;
+            document.getElementById('expectedDelay').textContent = impact.expected_delay_minutes + ' min';
+            document.getElementById('affectedRadius').textContent = impact.affected_radius_km + ' km';
+            document.getElementById('congestionLevel').textContent = impact.congestion_level;
+
+            // Manpower Deployment Plan
+            const manpowerPlan = rec.manpower_deployment;
+            let manpowerHTML = `<strong>Total: ${manpowerPlan.total} personnel</strong><br><br>`;
+            manpowerHTML += `<strong>Deployment Strategy:</strong><ul>`;
+            for (const [key, value] of Object.entries(manpowerPlan.deployment_strategy)) {
+                manpowerHTML += `<li><strong>${key.replace(/_/g, ' ')}:</strong> ${value}</li>`;
+            }
+            manpowerHTML += `</ul><strong>Deployment Points:</strong><br>`;
+            manpowerHTML += manpowerPlan.deployment_points.map(p => `📍 ${p}`).join('<br>');
+            document.getElementById('manpowerPlan').innerHTML = manpowerHTML;
+
+            // Barricade Plan
+            const barricadePlan = rec.barricade_plan;
+            let barricadeHTML = `<strong>Total Barricades: ${barricadePlan.total_barricades}</strong><br><br>`;
+            barricadeHTML += `<strong>Distribution:</strong><ul>`;
+            for (const [key, value] of Object.entries(barricadePlan.distribution)) {
+                barricadeHTML += `<li><strong>${key.replace(/_/g, ' ')}:</strong> ${value} barricades</li>`;
+            }
+            barricadeHTML += `</ul><strong>Signage Required:</strong><ul>`;
+            barricadePlan.signage.forEach(s => {
+                barricadeHTML += `<li>🪧 ${s}</li>`;
+            });
+            barricadeHTML += `</ul>`;
+            document.getElementById('barricadePlan').innerHTML = barricadeHTML;
+
+            // Alternate Routes
+            let routesHTML = `<strong>Recommended Diversion Routes:</strong><ul>`;
+            rec.alternate_routes.forEach(route => {
+                routesHTML += `<li>🛣️ ${route}</li>`;
+            });
+            routesHTML += `</ul>`;
+            document.getElementById('alternateRoutes').innerHTML = routesHTML;
+
+            // Resource numbers
+            document.getElementById('trafficPolice').textContent = rec.manpower.traffic_police;
+            document.getElementById('supervisors').textContent = rec.manpower.supervisors;
+            document.getElementById('supportStaff').textContent = rec.manpower.support_staff;
+            document.getElementById('totalPersonnel').textContent = rec.total_personnel;
+            document.getElementById('barricades').textContent = rec.barricades;
+            document.getElementById('setupTime').textContent = rec.estimated_setup_time_minutes + ' min';
+
+            // Historical insights
+            const hist = rec.historical_insights;
+            document.getElementById('pastEvents').textContent = hist.similar_past_events;
+            document.getElementById('avgImpact').textContent = hist.historical_avg_impact;
+            document.getElementById('peakFreq').textContent = hist.peak_hour_frequency;
+
+            // Real-time factors
+            const rt = rec.real_time_factors;
+            document.getElementById('multiplier').textContent = rt.current_multiplier + 'x';
+            document.getElementById('adjustedImpact').textContent = rt.adjusted_impact_score;
+            const timeCtx = [];
+            if (rt.is_peak_hour) timeCtx.push('🔴 Peak');
+            if (rt.is_weekend) timeCtx.push('📅 Weekend');
+            document.getElementById('timeContext').textContent = timeCtx.length > 0 ? timeCtx.join(' ') : '✓ Normal';
+
+            const divList = document.getElementById('diversionList');
+            divList.innerHTML = rec.diversions.map(d => `<li>${d}</li>`).join('');
+
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function loadExample() {
+            document.getElementById('eventType').value = 'unplanned';
+            document.getElementById('eventCause').value = 'vehicle_breakdown';
+            document.getElementById('corridor').value = 'Hosur Road';
+            document.getElementById('hour').value = '9';
+            document.getElementById('dayOfWeek').value = '0';
+            document.getElementById('month').value = '6';
+            document.getElementById('roadClosure').value = 'false';
+        }
+
+        loadDropdowns();
+    </script>
+</body>
+</html>
