@@ -22,11 +22,6 @@ def analyze_historical_pattern(event_cause, corridor, hour, day_of_week):
         "past_incidents": past_incidents,
         "peak_hour_frequency": peak_hour_frequency
     }
-            "past_incidents": len(corridor_similar),
-            "peak_hour_frequency": len(corridor_similar[corridor_similar['is_peak_hour'] == 1]) / len(corridor_similar) if len(corridor_similar) > 0 else 0
-        }
-    
-    return {"avg_impact": 2, "past_incidents": 0, "peak_hour_frequency": 0.5}
 
 def calculate_real_time_multiplier(hour, day_of_week, is_peak_hour, is_weekend):
     """Calculate real-time impact multiplier"""
